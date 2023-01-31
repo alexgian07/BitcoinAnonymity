@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Transaction Info</title>
+  </head>
+  <body>
+    <button id="get-info-btn">Get Transaction Info</button>
+    <table id="transaction-info">
+        <thead>
+            <tr>
+                <th>Transaction Hash</th>
+                <th>Transaction inputs count</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody id="transaction-info-body"></tbody>
+    </table>
+  <script>
+    const btn = document.getElementById("get-info-btn");
+    const infoDiv = document.getElementById("transaction-info");
+    btn.addEventListener("click", async () => {
+    const response = await fetch("/getTransactionInfo");
+    const data = await response.json();
+    if (data.error) {
+      // ...
+    } else {
+      let tbody = document.getElementById("transaction-info-body");
+      for (let transaction of data.transactionInfo) {
+        console.log("showing data");
+          let tr = document.createElement("tr");
+          let date= new Date(transaction.time*1000);
+          tr.innerHTML = `
+              <td>${transaction.hash}</td>
+              <td>${transaction?.inputs?.length}</td>
+              <td>${date.getHours() + ":" + date.getMinutes() + ", "+ date.toDateString()}</td>
+          `;
+          tbody.appendChild(tr);
+      }
+    }
+  });
+  </script>
+  </body>
+</html>
