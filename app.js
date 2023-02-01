@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const axios = require('axios');
 const fs = require('fs');
+const bitcore = require('bitcore-lib');
 
 app.use(express.static('public'));
 
@@ -37,31 +38,33 @@ async function getTransaction(transactionHash) {
 
 app.get('/getTransactionInfo', async (req, res) => {
   let lines = await readLines("wasabi_txs_02-2022.txt");
-  var chosenLines = lines.slice(0, 10);
+  var chosenLines = lines.slice(0, 5);
   let errorCount = 0;
   let transactionInfo = [];
+  let addressToInputs = {};
   try {
-    console.log("start");
-    for (let line of chosenLines) {
-        console.log("getting");
-        console.log(line);
-        let info = await getTransaction(line);
-        console.log("finished");
+     for (let line of chosenLines) {
+        let info = await getTransaction(chosenLines[0]);
         if (info) {
             console.log("info aquired");
             if (info?.inputs && info?.inputs?.length > 0) {
                 transactionInfo.push(info);
-                console.log(info.inputs);
-                for (let input in info.inputs){
-                  console.log("script type");
-                  console.log(input.script);
+                for (let input of info.inputs){
+                  console.log("checking previous transaction for input");
+                  let addr = input.prev_out.addr;
+                  if (!addressToInputs[addr]) {
+                    addressToInputs[addr] = []; 
+                  }
+                  addressToInputs[addr].push(input);
+                  console.log("Input sent from address " +addr);
                 }
             } else {
                 console.log(" no block height");
             }
         }
-    }
-    res.json({ transactionInfo });
+     }
+    let addressesCount = Object.keys(addressToInputs).length;
+    res.json({transactionInfo, addressesCount});
   } catch (error) {
     errorCount++;
   }

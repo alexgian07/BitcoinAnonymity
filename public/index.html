@@ -10,6 +10,7 @@
             <tr>
                 <th>Transaction Hash</th>
                 <th>Transaction inputs count</th>
+                <th>Different addresses</th>
                 <th>Date</th>
             </tr>
         </thead>
@@ -21,6 +22,7 @@
     btn.addEventListener("click", async () => {
     const response = await fetch("/getTransactionInfo");
     const data = await response.json();
+    debugger
     if (data.error) {
       // ...
     } else {
@@ -32,6 +34,7 @@
           tr.innerHTML = `
               <td>${transaction.hash}</td>
               <td>${transaction?.inputs?.length}</td>
+              <td>${data?.addressesCount}</td>
               <td>${date.getHours() + ":" + date.getMinutes() + ", "+ date.toDateString()}</td>
           `;
           tbody.appendChild(tr);
