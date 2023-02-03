@@ -1,47 +1,29 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Transaction Info</title>
-  </head>
-  <body>
-    <button id="get-info-btn">Get Transaction Info</button>
-    <table id="transaction-info">
-        <thead>
-            <tr>
-                <th>Transaction Hash</th>
-                <th>Transaction inputs count</th>
-                <th>Different addresses</th>
-                <th>Anonymity fault percentage</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody id="transaction-info-body"></tbody>
-    </table>
-  <script>
-    const btn = document.getElementById("get-info-btn");
-    // const infoDiv = document.getElementById("transaction-info");
 
-    btn.addEventListener("click", async () => {
-      setInterval(async () => {
-        const response = await fetch("/getTransactionInfo");
-        const data = await response.json();
-        if(!data.error) {
-          let tbody = document.getElementById("transaction-info-body");
-          for (let transaction of data.transactionInfo) {
-              let tr = document.createElement("tr");
-              let date= new Date(transaction.time*1000);
-              tr.innerHTML = `
-                  <td>${transaction.hash}</td>
-                  <td>${transaction?.inputs?.length}</td>
-                  <td>${data?.addressesCount}</td>
-                  <td>${100*(transaction?.inputs?.length - data?.addressesCount)/transaction?.inputs?.length}%</td>
-                  <td>${date.getHours() + ":" + date.getMinutes() + ", "+ date.toDateString()}</td>
-              `;
-              tbody.appendChild(tr);
-          }
-        }
-      }, 10000);
-  });
-  </script>
-  </body>
+<head>
+  <title>Transaction Info</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <button class="button-8" id="get-info-btn">Analyse next Transaction</button>
+  <button class="button-8" id="pause-btn">Pause</button>
+  <button class="button-8" id="export-json-btn">Export</button>
+  <script src="scripts.js"></script>
+
+  <table id="transaction-info">
+    <thead>
+      <tr>
+        <th>Transaction Hash</th>
+        <th>Transaction inputs count</th>
+        <th>Different addresses</th>
+        <th>Anonymity fault percentage</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="transaction-info-body"></tbody>
+  </table>
+</body>
+
 </html>
