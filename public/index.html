@@ -10,8 +10,34 @@
   <button class="button-8" id="get-info-btn">Analyse next Transaction</button>
   <button class="button-8" id="pause-btn">Pause</button>
   <button class="button-8" id="export-json-btn">Export</button>
+  <input type="file" id="file-input">
+
+  <div style="font-size: 20px; color: red; display: none;" id="timerDiv">
+    Api not responding. Retrying in..
+    <label id="timer" >60s</label>
+  </div>
+
   <script src="scripts.js"></script>
 
+  <table id="statistics">
+    <tr>
+      <th>Sample count</th>
+      <th>Transaction inputs</th>
+      <th>Different addresses</th>
+      <th>Anonymity fault percentage</th>
+      <th>Outputs</th>
+      <th>Output different values</th>
+    </tr>
+    <tr>
+      <td>0</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </table>
+  
   <table id="transaction-info">
     <thead>
       <tr>

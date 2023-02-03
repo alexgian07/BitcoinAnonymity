@@ -45,8 +45,11 @@ app.get('/getTransactionInfo', async (req, res) => {
     if (transactionInfo){
       res.json({transactionInfo});
     }
+    else{
+      res.json();
+    }
   } catch (error) {
-    res.json();
+      res.json();
   }
 });
 
