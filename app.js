@@ -40,24 +40,11 @@ app.get('/getTransactionInfo', async (req, res) => {
   let lines = await readLines("wasabi_txs_02-2022.txt");
   var chosenLine = lines[count];
   count++;
-  let transactionInfo = [];
-  let addressToInputs = {};
   try {
-    let info = await getTransaction(chosenLine);
-    if (info) {
-      if (info?.inputs && info?.inputs?.length > 0) {
-        transactionInfo.push(info);
-        for (let input of info.inputs) {
-          let addr = input.prev_out.addr;
-          if (!addressToInputs[addr]) {
-            addressToInputs[addr] = [];
-          }
-          addressToInputs[addr].push(input);
-        }
-      } 
+    let transactionInfo = await getTransaction(chosenLine);
+    if (transactionInfo){
+      res.json({transactionInfo});
     }
-    let addressesCount = Object.keys(addressToInputs)?.length ?? 0;
-    res.json({ transactionInfo, addressesCount });
   } catch (error) {
     res.json();
   }
