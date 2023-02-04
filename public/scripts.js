@@ -1,6 +1,8 @@
 const btn = document.getElementById("get-info-btn");
 const pauseBtn = document.getElementById("pause-btn");
 const exportJsonBtn = document.getElementById("export-json-btn");
+const clearButton = document.getElementById("clearButton");
+const form = document.querySelector('form');
 let intervalTime = 1000;
 let intervalId;
 
@@ -17,87 +19,7 @@ btn.addEventListener("click", async () => {
             console.log("Next transaction");
             const response = await fetch("/getTransactionInfo");
             const data = await response.json();
-
-            if (!data.error) {
-                let tbody = document.getElementById("transaction-info-body");
-                let transaction = data.transactionInfo;
-                if (!transaction) {
-                    console.log("No data returned: starting timer");
-                    startTimer();
-                    return;
-                }
-
-                //inputs analysis
-                let addressToInputs = {};
-                if (transaction?.inputs && transaction?.inputs?.length > 0) {
-                    for (let input of transaction.inputs) {
-                        let addr = input.prev_out.addr;
-                        if (!addressToInputs[addr]) {
-                            addressToInputs[addr] = [];
-                        }
-                        addressToInputs[addr].push(input);
-                    }
-                }
-                let addressesCount = Object.keys(addressToInputs)?.length ?? 0;
-
-                let tr = document.createElement("tr");
-                let date = new Date(transaction.time * 1000);
-                let dif = transaction?.inputs?.length - addressesCount;
-
-                //outputs analysis
-                let valueToOutputs = {};
-                for (let output of transaction?.out ?? []) {
-                    let outValue = output.value;
-                    if (!valueToOutputs[outValue]) {
-                        valueToOutputs[outValue] = [];
-                    }
-                    valueToOutputs[outValue].push(output);
-                }
-                let outputValuesCount = Object.keys(valueToOutputs)?.length ?? 0;
-                let transactionInputsLength = transaction?.inputs?.length ?? 0;
-                let transactionOutputsLength = transaction?.out?.length ?? 0;
-                let diffFault = 100 * (dif) / transaction?.inputs?.length;
-
-                tr.innerHTML = `
-                  <td>${transaction.hash}</td>
-                  <td>${transactionInputsLength}</td>
-                  <td>${addressesCount}</td>
-                  <td  class="${(dif ?? 0) !== 0 ? 'red' : ''}">${100 * (dif) / transactionInputsLength}%</td>
-                  <td>${transaction?.out?.length}</td>
-                  <td>${outputValuesCount}</td>
-                  <td>${date.getHours() + ":" + date.getMinutes() + ", " + date.toDateString()}</td>
-              `;
-
-                let statisticsArray = [];
-                statisticsArray.push(transactionsTotalCount++);
-
-                transactionInputsStore.push(transactionInputsLength);
-                let transactionInputsMedian = sumArray(transactionInputsStore) / transactionInputsStore.length;
-                statisticsArray.push(transactionInputsMedian);
-
-                addressesStore.push(addressesCount);
-                let addressesCountMedian = sumArray(addressesStore) / addressesStore.length;
-                statisticsArray.push(addressesCountMedian);
-
-                anonymityFaultsStore.push(diffFault);
-                let anonymityFaultsMedian = sumArray(anonymityFaultsStore) / anonymityFaultsStore.length;
-                statisticsArray.push(anonymityFaultsMedian);
-
-                outputsStore.push(transactionOutputsLength);
-                let outputsStoreMedian = sumArray(outputsStore) / outputsStore.length;
-                statisticsArray.push(outputsStoreMedian);
-
-                outputValuesStore.push(outputValuesCount);
-                let outputValuesMedian = sumArray(outputValuesStore) / outputValuesStore.length;
-                statisticsArray.push(outputValuesMedian);
-
-                setStatistics(statisticsArray);
-                tbody.appendChild(tr);
-            }
-            else {
-                console.log("starting timer after error");
-                startTimer();
-            }
+            analyseTransaction(data);
         }, intervalTime);
     }
     catch {
@@ -106,23 +28,23 @@ btn.addEventListener("click", async () => {
 });
 
 
-const input = document.getElementById("file-input");
-input.addEventListener("change", function () {
-  const file = input.files[0];
-  const reader = new FileReader();
-  reader.onload = function () {
-    const text = reader.result;
-    // Split the text by line breaks to get an array of lines
-    const lines = text.split("\n");
-    // Process each line
-    debugger
-    for (const line of lines) {
-      // Parse the line
-      // ...
-    }
-  };
-  reader.readAsText(file);
-});
+// const input = document.getElementById("file-input");
+// input.addEventListener("change", function () {
+//   const file = input.files[0];
+//   const reader = new FileReader();
+//   reader.onload = function () {
+//     const text = reader.result;
+//     // Split the text by line breaks to get an array of lines
+//     const lines = text.split("\n");
+//     // Process each line
+//     debugger
+//     for (const line of lines) {
+//       // Parse the line
+//       // ...
+//     }
+//   };
+//   reader.readAsText(file);
+// });
 
 pauseBtn.addEventListener("click", () => {
     console.log("paused analysis");
@@ -147,6 +69,28 @@ exportJsonBtn.addEventListener("click", () => {
     a.click();
 });
 
+clearButton.addEventListener("click", () => {
+    form.elements['transaction-hash'].value = '';
+});
+
+form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const transactionHash = form.elements['transaction-hash'].value;
+    const response = await fetch("/transaction", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            transactionHash: transactionHash,
+            event: "TransactionConfirmed"
+        })
+    });
+    let data = await response?.json();
+    debugger
+    analyseTransaction(data);
+});
+
 
 function satoshisToBTC(satoshis) {
     return satoshis / 100000000;
@@ -164,6 +108,88 @@ function sumArray(arr) {
     return sum;
 }
 
+function analyseTransaction(data){
+    if (!data.error) {
+        let tbody = document.getElementById("transaction-info-body");
+        let transaction = data.transactionInfo;
+        if (!transaction) {
+            console.log("No data returned: starting timer");
+            startTimer();
+            return;
+        }
+
+        //inputs analysis
+        let addressToInputs = {};
+        if (transaction?.inputs && transaction?.inputs?.length > 0) {
+            for (let input of transaction.inputs) {
+                let addr = input.prev_out.addr;
+                if (!addressToInputs[addr]) {
+                    addressToInputs[addr] = [];
+                }
+                addressToInputs[addr].push(input);
+            }
+        }
+        let addressesCount = Object.keys(addressToInputs)?.length ?? 0;
+
+        let tr = document.createElement("tr");
+        let date = new Date(transaction.time * 1000);
+        let dif = transaction?.inputs?.length - addressesCount;
+
+        //outputs analysis
+        let valueToOutputs = {};
+        for (let output of transaction?.out ?? []) {
+            let outValue = output.value;
+            if (!valueToOutputs[outValue]) {
+                valueToOutputs[outValue] = [];
+            }
+            valueToOutputs[outValue].push(output);
+        }
+        let outputValuesCount = Object.keys(valueToOutputs)?.length ?? 0;
+        let transactionInputsLength = transaction?.inputs?.length ?? 0;
+        let transactionOutputsLength = transaction?.out?.length ?? 0;
+        let diffFault = 100 * (dif) / transaction?.inputs?.length;
+
+        tr.innerHTML = `
+          <td>${transaction.hash}</td>
+          <td>${transactionInputsLength}</td>
+          <td>${addressesCount}</td>
+          <td  class="${(dif ?? 0) !== 0 ? 'red' : ''}">${100 * (dif) / transactionInputsLength}%</td>
+          <td>${transaction?.out?.length}</td>
+          <td>${outputValuesCount}</td>
+          <td>${date.getHours() + ":" + date.getMinutes() + ", " + date.toDateString()}</td>
+      `;
+
+        let statisticsArray = [];
+        statisticsArray.push(++transactionsTotalCount);
+
+        transactionInputsStore.push(transactionInputsLength);
+        let transactionInputsMedian = sumArray(transactionInputsStore) / transactionInputsStore.length;
+        statisticsArray.push(transactionInputsMedian);
+
+        addressesStore.push(addressesCount);
+        let addressesCountMedian = sumArray(addressesStore) / addressesStore.length;
+        statisticsArray.push(addressesCountMedian);
+
+        anonymityFaultsStore.push(diffFault);
+        let anonymityFaultsMedian = sumArray(anonymityFaultsStore) / anonymityFaultsStore.length;
+        statisticsArray.push(anonymityFaultsMedian);
+
+        outputsStore.push(transactionOutputsLength);
+        let outputsStoreMedian = sumArray(outputsStore) / outputsStore.length;
+        statisticsArray.push(outputsStoreMedian);
+
+        outputValuesStore.push(outputValuesCount);
+        let outputValuesMedian = sumArray(outputValuesStore) / outputValuesStore.length;
+        statisticsArray.push(outputValuesMedian);
+
+        setStatistics(statisticsArray);
+        tbody.appendChild(tr);
+    }
+    else {
+        console.log("starting timer after error");
+        startTimer();
+    }
+}
 
 function setStatistics(values) {
     var table = document.getElementById("statistics");

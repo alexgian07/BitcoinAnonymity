@@ -61,3 +61,48 @@
     .red {
       color: red;
     }
+
+    form {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+    
+    input[type="text"] {
+      margin-right: 10px;
+    }
+
+    .buttons-area {
+      margin-bottom: 20px;
+    }
+
+    .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .buttons {
+      display: flex;
+      justify-content: flex-start;
+    }
+    
+    .inputs-buttons {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .left-btns, .right-btns {
+      display: flex;
+      align-items: center;
+    }
+    
+    button {
+      margin: 10px;
+    }
+
+    body{
+      background-color: lightblue;
+    }
+    
+    

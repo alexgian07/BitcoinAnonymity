@@ -7,14 +7,30 @@
 </head>
 
 <body>
-  <button class="button-8" id="get-info-btn">Analyse next Transaction</button>
-  <button class="button-8" id="pause-btn">Pause</button>
-  <button class="button-8" id="export-json-btn">Export</button>
-  <input type="file" id="file-input">
+  <div class="buttons-area container">
+    <div class="left-btns">
+      <button class="button-8" id="get-info-btn">Analyse next Transaction</button>
+      <button class="button-8" id="pause-btn">Pause</button>
+      <button class="button-8" id="export-json-btn">Export</button>
+    </div>
+
+    <div class="right-btns">
+      <form>
+        <div>
+          <label for="transaction-hash">Transaction Hash:</label>
+          <input type="text" id="transaction-hash" name="transaction-hash">
+        </div>
+        <button class="button-8" type="submit">Submit</button>
+        <button class="button-8" id="clearButton">Clear</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- <input type="file" id="file-input"> -->
 
   <div style="font-size: 20px; color: red; display: none;" id="timerDiv">
     Api not responding. Retrying in..
-    <label id="timer" >60s</label>
+    <label id="timer">60s</label>
   </div>
 
   <script src="scripts.js"></script>
@@ -37,7 +53,7 @@
       <td>-</td>
     </tr>
   </table>
-  
+
   <table id="transaction-info">
     <thead>
       <tr>
