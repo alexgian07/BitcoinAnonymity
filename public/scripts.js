@@ -3,6 +3,7 @@ const pauseBtn = document.getElementById("pause-btn");
 const exportJsonBtn = document.getElementById("export-json-btn");
 const clearButton = document.getElementById("clearButton");
 const form = document.querySelector('form');
+const tabs = document.querySelectorAll(".tab-link");
 let intervalTime = 1000;
 let intervalId;
 
@@ -12,6 +13,21 @@ let addressesStore = [];
 let anonymityFaultsStore = [];
 let outputsStore = [];
 let outputValuesStore = [];
+
+
+tabs.forEach(tab => {
+  tab.addEventListener("click", function(event) {
+    event.preventDefault();
+    const activeTab = document.querySelector(".tab-content.active");
+    activeTab.classList.remove("active");
+    const target = document.querySelector(this.getAttribute("href"));
+    target.classList.add("active");
+
+    const activeLink = document.querySelector(".tab-link.active");
+    activeLink.classList.remove("active");
+    this.classList.add("active");
+  });
+});
 
 btn.addEventListener("click", async () => {
     try {

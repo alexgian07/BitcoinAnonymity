@@ -1,108 +1,203 @@
 .button-8 {
-    background-color: #e1ecf4;
-    border-radius: 3px;
-    border: 1px solid #7aa7c7;
-    box-shadow: rgba(255, 255, 255, .7) 0 1px 0 0 inset;
-    box-sizing: border-box;
-    color: #39739d;
-    cursor: pointer;
-    display: inline-block;
-    font-family: -apple-system,system-ui,"Segoe UI","Liberation Sans",sans-serif;
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1.15385;
-    margin: 5px;
-    outline: none;
-    padding: 8px .8em;
-    position: relative;
-    text-align: center;
-    text-decoration: none;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: manipulation;
-    vertical-align: baseline;
-    white-space: nowrap;
-  }
-  
-  .button-8:hover,
-  .button-8:focus {
-    background-color: #b3d3ea;
-    color: #2c5777;
-  }
-  
-  .button-8:focus {
-    box-shadow: 0 0 0 4px rgba(0, 149, 255, .15);
-  }
-  
-  .button-8:active {
-    background-color: #a0c7e4;
-    box-shadow: none;
-    color: #2c5777;
-  }
-    table {
-      width: 80%;
-      border-collapse: collapse;
-    }
-  
-    th,
-    td {
-      border: 1px solid blue;
-      padding: 8px;
-      text-align: left;
-      font-family: Arial, sans-serif;
-      font-size: 14px;
-    }
-  
-    th {
-      background-color: blue;
-      color: white;
-    }
-  
-    .red {
-      color: red;
-    }
+  background-color: #e1ecf4;
+  border-radius: 3px;
+  border: 1px solid #7aa7c7;
+  box-shadow: rgba(255, 255, 255, .7) 0 1px 0 0 inset;
+  box-sizing: border-box;
+  color: #39739d;
+  cursor: pointer;
+  display: inline-block;
+  font-family: -apple-system, system-ui, "Segoe UI", "Liberation Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.15385;
+  margin: 5px;
+  outline: none;
+  padding: 8px .8em;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
 
-    form {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-    }
-    
-    input[type="text"] {
-      margin-right: 10px;
-    }
+.button-8:hover,
+.button-8:focus {
+  background-color: #b3d3ea;
+  color: #2c5777;
+}
 
-    .buttons-area {
-      margin-bottom: 20px;
-    }
+.button-8:focus {
+  box-shadow: 0 0 0 4px rgba(0, 149, 255, .15);
+}
 
-    .container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .buttons {
-      display: flex;
-      justify-content: flex-start;
-    }
-    
-    .inputs-buttons {
-      display: flex;
-      justify-content: flex-end;
-    }
+.button-8:active {
+  background-color: #a0c7e4;
+  box-shadow: none;
+  color: #2c5777;
+}
 
-    .left-btns, .right-btns {
-      display: flex;
-      align-items: center;
-    }
-    
-    button {
-      margin: 10px;
-    }
+table {
+  width: 80%;
+  border-collapse: collapse;
+}
 
-    body{
-      background-color: lightblue;
-    }
-    
-    
+th,
+td {
+  border: 1px solid blue;
+  padding: 8px;
+  text-align: left;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+th {
+  background-color: darkgrey;
+  color: black;
+}
+
+.red {
+  color: red;
+}
+
+form {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+input[type="text"] {
+  margin-right: 10px;
+}
+
+.buttons-area {
+  margin-bottom: 20px;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.inputs-buttons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.left-btns,
+.right-btns {
+  display: flex;
+  align-items: center;
+}
+
+button {
+  margin: 10px;
+}
+
+body {
+  background-color: lightblue;
+  min-height: calc(100vh -50px);
+  overflow-y: scroll;
+  margin-bottom:1px;
+}
+
+.navigation {
+  display: flex;
+  justify-content: space-between;
+}
+
+.tab-link {
+  display: inline-block;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.tab-link.active {
+  background-color: lightgray;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.navigation {
+  background-color: #333;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.navigation a {
+  color: white;
+  text-decoration: none;
+  margin-right: 10px;
+}
+
+.navigation button {
+  background-color: white;
+  border: none;
+  color: #4CAF50;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.navigation button:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+
+
+.tab-link {
+  background-color: grey;
+  color: #333;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 14px;
+  cursor: pointer;
+  margin-right: 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.tab-link:hover {
+  background-color: #333;
+  color: #fff;
+}
+
+.tab-link.active {
+  background-color: cornflowerblue;
+  color: #fff;
+  font-weight: bold;
+}
+
+footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: #333;
+  color: white;
+  text-align: center;
+  height:50px;
+  text-align: center;
+}
+
+#statistics{
+  margin-bottom:20px;
+}

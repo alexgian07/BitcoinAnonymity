@@ -7,67 +7,86 @@
 </head>
 
 <body>
-  <div class="buttons-area container">
-    <div class="left-btns">
-      <button class="button-8" id="get-info-btn">Analyse next Transaction</button>
-      <button class="button-8" id="pause-btn">Pause</button>
-      <button class="button-8" id="export-json-btn">Export</button>
-    </div>
 
-    <div class="right-btns">
-      <form>
-        <div>
-          <label for="transaction-hash">Transaction Hash:</label>
-          <input type="text" id="transaction-hash" name="transaction-hash">
-        </div>
-        <button class="button-8" type="submit">Submit</button>
-        <button class="button-8" id="clearButton">Clear</button>
-      </form>
-    </div>
+  <div class="navigation">
+    <a href="#tab1" class="tab-link active">Transaction analysis</a>
+    <a href="#tab2" class="tab-link">Results</a>
+    <a href="#tab3" class="tab-link">About</a>
   </div>
-
-  <!-- <input type="file" id="file-input"> -->
-
-  <div style="font-size: 20px; color: red; display: none;" id="timerDiv">
-    Api not responding. Retrying in..
-    <label id="timer">60s</label>
-  </div>
-
-  <script src="scripts.js"></script>
-
-  <table id="statistics">
-    <tr>
-      <th>Sample count</th>
-      <th>Transaction inputs</th>
-      <th>Different addresses</th>
-      <th>Anonymity fault percentage</th>
-      <th>Outputs</th>
-      <th>Output different values</th>
-    </tr>
-    <tr>
-      <td>0</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-  </table>
-
-  <table id="transaction-info">
-    <thead>
+  
+  <div id="tab1" class="tab-content active">
+    <div class="buttons-area container">
+      <div class="left-btns">
+        <button class="button-8" id="get-info-btn">Analyse next Transaction</button>
+        <button class="button-8" id="pause-btn">Pause</button>
+        <button class="button-8" id="export-json-btn">Export</button>
+      </div>
+  
+      <div class="right-btns">
+        <form>
+          <div>
+            <label for="transaction-hash">Transaction Hash:</label>
+            <input type="text" id="transaction-hash" name="transaction-hash">
+          </div>
+          <button class="button-8" type="submit">Submit</button>
+          <button class="button-8" id="clearButton">Clear</button>
+        </form>
+      </div>
+    </div>
+  
+    <!-- <input type="file" id="file-input"> -->
+  
+    <div style="font-size: 20px; color: red; display: none;" id="timerDiv">
+      Api not responding. Retrying in..
+      <label id="timer">60s</label>
+    </div>
+  
+    <script src="scripts.js"></script>
+  
+    <table id="statistics">
       <tr>
-        <th>Transaction Hash</th>
+        <th>Sample count</th>
         <th>Transaction inputs</th>
         <th>Different addresses</th>
         <th>Anonymity fault percentage</th>
         <th>Outputs</th>
         <th>Output different values</th>
-        <th>Date</th>
       </tr>
-    </thead>
-    <tbody id="transaction-info-body"></tbody>
-  </table>
+      <tr>
+        <td>0</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+        <td>-</td>
+      </tr>
+    </table>
+  
+    <table id="transaction-info" style="max-height: 300px; overflow: scroll; margin-bottom:50px;">
+      <thead>
+        <tr>
+          <th>Transaction Hash</th>
+          <th>Transaction inputs</th>
+          <th>Different addresses</th>
+          <th>Anonymity fault percentage</th>
+          <th>Outputs</th>
+          <th>Output different values</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="transaction-info-body"></tbody>
+    </table>
+  </div>
+  
+  <div id="tab2" class="tab-content">
+    <!-- Content for tab 2 goes here -->
+  </div>
+  
+  <div id="tab3" class="tab-content">
+    <!-- Content for tab 3 goes here -->
+  </div>
 </body>
-
+<footer>
+  <p><label style="font-weight: bold;">Alexandros Giannoylis</label></p>
+</footer>
 </html>
