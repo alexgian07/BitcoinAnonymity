@@ -46,7 +46,9 @@ app.post('/transaction', async (req, res) => {
 
 
 app.get('/getTransactionInfo', async (req, res) => {
-    let lines = await readLines("wasabi_txs_02-2022.txt");
+     let lines = await readLines("wasabi_txs_02-2022.txt");
+    // let lines = await readLines("samourai_txs_02-2022.txt");
+    
     var chosenLine = lines[count];
     count++;
     try {
@@ -74,6 +76,16 @@ async function getTransaction(transactionHash) {
     console.error(error);
   }
 }
+
+async function getBlock(block) {
+  try {
+    const response = await axios.get(`https://blockchain.info/rawblock/${block}`);
+    return response.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 
 async function readLines(filePath) {
   return new Promise((resolve, reject) => {
