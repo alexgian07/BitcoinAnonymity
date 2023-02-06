@@ -4,7 +4,7 @@ const exportJsonBtn = document.getElementById("export-json-btn");
 const clearButton = document.getElementById("clearButton");
 const form = document.querySelector('form');
 const tabs = document.querySelectorAll(".tab-link");
-let intervalTime = 1000;
+let intervalTime = 100;
 let intervalId;
 
 let transactionsTotalCount = 0;
@@ -13,20 +13,22 @@ let addressesStore = [];
 let anonymityFaultsStore = [];
 let outputsStore = [];
 let outputValuesStore = [];
+let denominationsStore = [];
+let anonymitySetStore = [];
 
 
 tabs.forEach(tab => {
-  tab.addEventListener("click", function(event) {
-    event.preventDefault();
-    const activeTab = document.querySelector(".tab-content.active");
-    activeTab.classList.remove("active");
-    const target = document.querySelector(this.getAttribute("href"));
-    target.classList.add("active");
+    tab.addEventListener("click", function (event) {
+        event.preventDefault();
+        const activeTab = document.querySelector(".tab-content.active");
+        activeTab.classList.remove("active");
+        const target = document.querySelector(this.getAttribute("href"));
+        target.classList.add("active");
 
-    const activeLink = document.querySelector(".tab-link.active");
-    activeLink.classList.remove("active");
-    this.classList.add("active");
-  });
+        const activeLink = document.querySelector(".tab-link.active");
+        activeLink.classList.remove("active");
+        this.classList.add("active");
+    });
 });
 
 btn.addEventListener("click", async () => {
@@ -112,8 +114,8 @@ function satoshisToBTC(satoshis) {
     return satoshis / 100000000;
 }
 
-function convertTo3DecimalPlaces(number) {
-    return Number(number.toFixed(3));
+function convertToNDecimalPlaces(number,n) {
+    return Number(number.toFixed(n));
 }
 
 function sumArray(arr) {
@@ -124,7 +126,7 @@ function sumArray(arr) {
     return sum;
 }
 
-function analyseTransaction(data){
+function analyseTransaction(data) {
     if (!data.error) {
         let tbody = document.getElementById("transaction-info-body");
         let transaction = data.transactionInfo;
@@ -160,6 +162,14 @@ function analyseTransaction(data){
             }
             valueToOutputs[outValue].push(output);
         }
+
+        let maxValue, maxCount = 0;
+        for (let value in valueToOutputs) {
+            if (valueToOutputs[value].length > maxCount) {
+                maxValue = satoshisToBTC(value);
+                maxCount = valueToOutputs[value].length;
+            }
+        }
         let outputValuesCount = Object.keys(valueToOutputs)?.length ?? 0;
         let transactionInputsLength = transaction?.inputs?.length ?? 0;
         let transactionOutputsLength = transaction?.out?.length ?? 0;
@@ -172,9 +182,13 @@ function analyseTransaction(data){
           <td  class="${(dif ?? 0) !== 0 ? 'red' : ''}">${100 * (dif) / transactionInputsLength}%</td>
           <td>${transaction?.out?.length}</td>
           <td>${outputValuesCount}</td>
+          <td>${maxValue}</td>
+          <td>${maxCount}</td>
           <td>${date.getHours() + ":" + date.getMinutes() + ", " + date.toDateString()}</td>
       `;
-
+        // if(transaction?.inputs?.length < 100){
+        //     return;
+        // }
         let statisticsArray = [];
         statisticsArray.push(++transactionsTotalCount);
 
@@ -198,6 +212,14 @@ function analyseTransaction(data){
         let outputValuesMedian = sumArray(outputValuesStore) / outputValuesStore.length;
         statisticsArray.push(outputValuesMedian);
 
+        denominationsStore.push(maxValue);
+        let denominationsMedian = sumArray(denominationsStore) / denominationsStore.length;
+        statisticsArray.push(denominationsMedian);
+
+        anonymitySetStore.push(maxCount);
+        let anonymitySetMedian = sumArray(anonymitySetStore) / anonymitySetStore.length;
+        statisticsArray.push(anonymitySetMedian);
+
         setStatistics(statisticsArray);
         tbody.appendChild(tr);
     }
@@ -212,7 +234,7 @@ function setStatistics(values) {
     var rows = table.getElementsByTagName("tr");
     var cells = rows[1].getElementsByTagName("td");
     for (var j = 0; j < cells.length; j++) {
-        cells[j].innerHTML = convertTo3DecimalPlaces(values[j]);
+        cells[j].innerHTML = convertToNDecimalPlaces(values[j],3);
     }
 }
 
