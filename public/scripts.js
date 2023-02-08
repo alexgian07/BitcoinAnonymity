@@ -4,7 +4,7 @@ const exportJsonBtn = document.getElementById("export-json-btn");
 const clearButton = document.getElementById("clearButton");
 const form = document.querySelector('form');
 const tabs = document.querySelectorAll(".tab-link");
-let intervalTime = 20000;
+let intervalTime = 1000;
 let intervalId;
 
 let transactionsTotalCount = 0;
@@ -185,7 +185,7 @@ async function analyseTransaction(data, moreDepth) {
         let isWasabiCoinJoin = (maxCount >= 10);
         console.log("max count " + maxCount + " so it is "+ isWasabiCoinJoin);
         if (!moreDepth) {
-            return isWasabiCoinJoin;
+            return {maxCount: maxCount, maxValue:maxValue };
         }
         let coinJoined, unspentCoins, coinJoinedBefore;
         if (isWasabiCoinJoin) {
@@ -322,7 +322,7 @@ async function checkForConsecutiveCoinjoinsAfter(transaction, maxValue, anonymit
             // console.log(data);
             let spendingOutpoint = transaction.out[i].spending_outpoints[0];
             if (spendingOutpoint) {
-                const response = await fetch("/transaction", {
+                await fetch("/transaction", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -330,12 +330,13 @@ async function checkForConsecutiveCoinjoinsAfter(transaction, maxValue, anonymit
                     body: JSON.stringify({
                         transactionHash: spendingOutpoint.tx_index,
                     })
-                });
-                let data = await response?.json();
-                let consecutiveCoinJoin = await analyseTransaction(data, false);
-                if (consecutiveCoinJoin) {
-                    consecutiveCoinJoinsCount++;
-                }
+                }).then(response => response.json())
+                .then(async data => {
+                    let result = await analyseTransaction(data, false);
+                    if ((result?.maxCount ?? 0) >= 10){
+                        consecutiveCoinJoinsCount++;
+                    }
+                }).catch(error => {});
             }
             else {
                 unspent++;
@@ -352,7 +353,6 @@ async function checkForConsecutiveCoinjoinsBefore(transaction) {
 
     for (var i = 0; i < transaction.inputs.length; i++) {
         let prev_out = transaction.inputs[i].prev_out;
-        let consecutiveCoinJoin;
         if (prev_out) {
             // console.log("Next input" + i);
             await fetch("/transaction", {
@@ -365,11 +365,11 @@ async function checkForConsecutiveCoinjoinsBefore(transaction) {
                 })
             }).then(response => response.json())
                 .then(async data => {
-                    consecutiveCoinJoin = await analyseTransaction(data, false)
-                    if (consecutiveCoinJoin) {
+                    let result = await analyseTransaction(data, false);
+                    if ((result?.maxCount ?? 0 >= 10) && result.maxValue == satoshisToBTC(prev_out.value)){
                         consecutiveCoinJoinsCount++;
                     }
-                }).catch(error => console.error(error));
+                }).catch(error => {});
             // let data = await response?.json();
             // let consecutiveCoinJoin = await analyseTransaction(data, false);
         }
