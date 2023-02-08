@@ -65,6 +65,31 @@ app.get('/getTransactionInfo', async (req, res) => {
 });
 
 
+app.post('/address', async (req, res) => {
+  const address = req.body.address;
+  try {
+    let addressInfo = await getAddress(address);
+    if (addressInfo){
+      res.json({addressInfo});
+    }
+    else{
+      res.json();
+    }
+  } catch (error) {
+      res.json();
+  }
+});
+
+
+async function getAddress(address) {
+  try {
+    const response = await axios.get(`https://blockchain.info/rawaddr/${address}`);
+    return response.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 
 // Helper methods
 

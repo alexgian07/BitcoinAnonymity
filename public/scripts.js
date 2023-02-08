@@ -4,7 +4,7 @@ const exportJsonBtn = document.getElementById("export-json-btn");
 const clearButton = document.getElementById("clearButton");
 const form = document.querySelector('form');
 const tabs = document.querySelectorAll(".tab-link");
-let intervalTime = 100;
+let intervalTime = 20000;
 let intervalId;
 
 let transactionsTotalCount = 0;
@@ -15,7 +15,11 @@ let outputsStore = [];
 let outputValuesStore = [];
 let denominationsStore = [];
 let anonymitySetStore = [];
+let consecutiveCoinJoinsAfterStore = [];
+let unspentAfterStore = [];
 
+let consecutiveCoinJoinsBeforeStore = [];
+let unspentBeforeStore = [];
 
 tabs.forEach(tab => {
     tab.addEventListener("click", function (event) {
@@ -34,10 +38,15 @@ tabs.forEach(tab => {
 btn.addEventListener("click", async () => {
     try {
         intervalId = setInterval(async () => {
-            console.log("Next transaction");
-            const response = await fetch("/getTransactionInfo");
-            const data = await response.json();
-            analyseTransaction(data);
+            // console.log("Next transaction");
+            // const response = await fetch("/getTransactionInfo");
+            // const data = await response.json();
+            // analyseTransaction(data, true);
+
+            fetch("/getTransactionInfo")
+                .then(response => response.json())
+                .then(data => analyseTransaction(data, true))
+                .catch(error => console.error(error));
         }, intervalTime);
     }
     catch {
@@ -105,8 +114,7 @@ form.addEventListener('submit', async (event) => {
         })
     });
     let data = await response?.json();
-    debugger
-    analyseTransaction(data);
+    analyseTransaction(data, true);
 });
 
 
@@ -114,7 +122,7 @@ function satoshisToBTC(satoshis) {
     return satoshis / 100000000;
 }
 
-function convertToNDecimalPlaces(number,n) {
+function convertToNDecimalPlaces(number, n) {
     return Number(number.toFixed(n));
 }
 
@@ -126,7 +134,7 @@ function sumArray(arr) {
     return sum;
 }
 
-function analyseTransaction(data) {
+async function analyseTransaction(data, moreDepth) {
     if (!data.error) {
         let tbody = document.getElementById("transaction-info-body");
         let transaction = data.transactionInfo;
@@ -174,16 +182,34 @@ function analyseTransaction(data) {
         let transactionInputsLength = transaction?.inputs?.length ?? 0;
         let transactionOutputsLength = transaction?.out?.length ?? 0;
         let diffFault = 100 * (dif) / transaction?.inputs?.length;
+        let isWasabiCoinJoin = (maxCount >= 10);
+        console.log("max count " + maxCount + " so it is "+ isWasabiCoinJoin);
+        if (!moreDepth) {
+            return isWasabiCoinJoin;
+        }
+        let coinJoined, unspentCoins, coinJoinedBefore;
+        if (isWasabiCoinJoin) {
+            console.log("GOING FOR DETAILS");
+            // console.log("precessing history");
+            coinJoinedBefore = await checkForConsecutiveCoinjoinsBefore(transaction);
+            let coinjoinResults = await checkForConsecutiveCoinjoinsAfter(transaction, maxValue, maxCount);
+            // console.log("evaluating results");
+            coinJoined = coinjoinResults?.consecutiveCoinJoinsCount;
+            unspentCoins = coinjoinResults?.unspent;
+        }
 
         tr.innerHTML = `
           <td>${transaction.hash}</td>
           <td>${transactionInputsLength}</td>
           <td>${addressesCount}</td>
+          <td>${coinJoinedBefore}</td>
           <td  class="${(dif ?? 0) !== 0 ? 'red' : ''}">${100 * (dif) / transactionInputsLength}%</td>
           <td>${transaction?.out?.length}</td>
           <td>${outputValuesCount}</td>
           <td>${maxValue}</td>
           <td>${maxCount}</td>
+          <td>${coinJoined}</td>
+          <td>${unspentCoins}</td>
           <td>${date.getHours() + ":" + date.getMinutes() + ", " + date.toDateString()}</td>
       `;
         // if(transaction?.inputs?.length < 100){
@@ -199,6 +225,10 @@ function analyseTransaction(data) {
         addressesStore.push(addressesCount);
         let addressesCountMedian = sumArray(addressesStore) / addressesStore.length;
         statisticsArray.push(addressesCountMedian);
+
+        consecutiveCoinJoinsBeforeStore.push(coinJoinedBefore ?? 0);
+        let consecutiveCoinJoinsBeforeMedian = sumArray(consecutiveCoinJoinsBeforeStore) / consecutiveCoinJoinsBeforeStore.length;
+        statisticsArray.push(consecutiveCoinJoinsBeforeMedian);
 
         anonymityFaultsStore.push(diffFault);
         let anonymityFaultsMedian = sumArray(anonymityFaultsStore) / anonymityFaultsStore.length;
@@ -220,8 +250,17 @@ function analyseTransaction(data) {
         let anonymitySetMedian = sumArray(anonymitySetStore) / anonymitySetStore.length;
         statisticsArray.push(anonymitySetMedian);
 
+        consecutiveCoinJoinsAfterStore.push(coinJoined ?? 0);
+        let consecutiveCoinJoinsAfterMedian = sumArray(consecutiveCoinJoinsAfterStore) / consecutiveCoinJoinsAfterStore.length;
+        statisticsArray.push(consecutiveCoinJoinsAfterMedian);
+
+        unspentAfterStore.push(unspentCoins ?? 0);
+        let unspentAfterMedian = sumArray(unspentAfterStore) / unspentAfterStore.length;
+        statisticsArray.push(unspentAfterMedian);
+        
         setStatistics(statisticsArray);
         tbody.appendChild(tr);
+        return false;
     }
     else {
         console.log("starting timer after error");
@@ -234,7 +273,7 @@ function setStatistics(values) {
     var rows = table.getElementsByTagName("tr");
     var cells = rows[1].getElementsByTagName("td");
     for (var j = 0; j < cells.length; j++) {
-        cells[j].innerHTML = convertToNDecimalPlaces(values[j],3);
+        cells[j].innerHTML = convertToNDecimalPlaces(values[j], 3);
     }
 }
 
@@ -260,4 +299,80 @@ function startTimer() {
 
 function delay(time) {
     return new Promise(resolve => setTimeout(resolve, time));
+}
+
+async function checkForConsecutiveCoinjoinsAfter(transaction, maxValue, anonymitySetCount) {
+    let spentCount = 0;
+    let consecutiveCoinJoinsCount = 0;
+    let unspent = 0;
+
+    for (var i = 0; i < transaction.out.length; i++) {
+        // console.log("Next output" + i);
+        if (satoshisToBTC(transaction.out[i].value) == maxValue) {
+            // const response = await fetch("/address", {
+            //     method: "POST",
+            //     headers: {
+            //         "Content-Type": "application/json"
+            //     },
+            //     body: JSON.stringify({
+            //         address: transaction.out[i].addr,
+            //     })
+            // });
+            // let data = await response?.json();
+            // console.log(data);
+            let spendingOutpoint = transaction.out[i].spending_outpoints[0];
+            if (spendingOutpoint) {
+                const response = await fetch("/transaction", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        transactionHash: spendingOutpoint.tx_index,
+                    })
+                });
+                let data = await response?.json();
+                let consecutiveCoinJoin = await analyseTransaction(data, false);
+                if (consecutiveCoinJoin) {
+                    consecutiveCoinJoinsCount++;
+                }
+            }
+            else {
+                unspent++;
+            }
+        }
+        else {
+        }
+    }
+    return { consecutiveCoinJoinsCount: consecutiveCoinJoinsCount, unspent: unspent };
+}
+
+async function checkForConsecutiveCoinjoinsBefore(transaction) {
+    let consecutiveCoinJoinsCount = 0;
+
+    for (var i = 0; i < transaction.inputs.length; i++) {
+        let prev_out = transaction.inputs[i].prev_out;
+        let consecutiveCoinJoin;
+        if (prev_out) {
+            // console.log("Next input" + i);
+            await fetch("/transaction", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    transactionHash: prev_out.tx_index,
+                })
+            }).then(response => response.json())
+                .then(async data => {
+                    consecutiveCoinJoin = await analyseTransaction(data, false)
+                    if (consecutiveCoinJoin) {
+                        consecutiveCoinJoinsCount++;
+                    }
+                }).catch(error => console.error(error));
+            // let data = await response?.json();
+            // let consecutiveCoinJoin = await analyseTransaction(data, false);
+        }
+    }
+    return  consecutiveCoinJoinsCount;
 }
