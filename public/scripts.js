@@ -10,17 +10,14 @@ let intervalId;
 let transactionsTotalCount = 0;
 let transactionInputsStore = [];
 let addressesStore = [];
-let anonymityFaultsStore = [];
 let outputsStore = [];
 let outputValuesStore = [];
 let denominationsStore = [];
 let anonymitySetStore = [];
 let consecutiveCoinJoinsAfterStore = [];
-let unspentAfterStore = [];
 let mistakesStore = [];
-
+let unspentAfterStore = [];
 let consecutiveCoinJoinsBeforeStore = [];
-let unspentBeforeStore = [];
 
 tabs.forEach(tab => {
     tab.addEventListener("click", function (event) {
@@ -49,7 +46,6 @@ btn.addEventListener("click", async () => {
         startTimer();
     }
 });
-
 
 // const input = document.getElementById("file-input");
 // input.addEventListener("change", function () {
@@ -190,23 +186,36 @@ async function analyseTransaction(data, moreDepth) {
             coinJoined = coinjoinResults?.consecutiveCoinJoinsCount;
             unspentCoins = coinjoinResults?.unspent;
         }
+        else{
+            coinJoinedBefore = 0;
+            coinJoined = 0;
+            unspentCoins = 0;
+        }
         
         let mistakes = await checkForAnonymityMistake(transaction, maxValue);
+
+        let coinJoinedBeforePercentage = convertToNDecimalPlaces((100 * (coinJoinedBefore ?? 0)) / transactionInputsLength, 3);
+        let coinJoinedAfterPercentage = convertToNDecimalPlaces((100 * (coinJoined ?? 0)) / maxCount, 3);
+        let mistakesPercentage = convertToNDecimalPlaces(((100 * (mistakes ?? 0)) / maxCount), 3);
+
         tr.innerHTML = `
           <td>${transaction.hash}</td>
           <td>${transactionInputsLength}</td>
           <td>${addressesCount}</td>
-          <td>${coinJoinedBefore}</td>
           <td  class="${(dif ?? 0) !== 0 ? 'red' : ''}">${100 * (dif) / transactionInputsLength}%</td>
+          <td>${coinJoinedBefore}</td>
+          <td>${coinJoinedBefore ? coinJoinedBeforePercentage : '-'}%</td>
           <td>${transaction?.out?.length}</td>
           <td>${maxValue}</td>
           <td>${maxCount}</td>
           <td>${coinJoined}</td>
+          <td>${coinJoined ? coinJoinedAfterPercentage : '-'}%</td>
           <td>${mistakes}</td>
+          <td>${mistakes ? mistakesPercentage : '-'}%</td>
           <td>${unspentCoins}</td>
           <td>${date.getHours() + ":" + date.getMinutes() + ", " + date.toDateString()}</td>
       `;
-        
+
         let statisticsArray = [];
         statisticsArray.push(++transactionsTotalCount);
 
@@ -217,22 +226,16 @@ async function analyseTransaction(data, moreDepth) {
         addressesStore.push(addressesCount);
         let addressesCountMedian = sumArray(addressesStore) / addressesStore.length;
         statisticsArray.push(addressesCountMedian);
+        statisticsArray.push(100 * (transactionInputsMedian - (addressesCountMedian ?? 0)) / transactionInputsMedian);
 
         consecutiveCoinJoinsBeforeStore.push(coinJoinedBefore ?? 0);
         let consecutiveCoinJoinsBeforeMedian = sumArray(consecutiveCoinJoinsBeforeStore) / consecutiveCoinJoinsBeforeStore.length;
         statisticsArray.push(consecutiveCoinJoinsBeforeMedian);
-
-        anonymityFaultsStore.push(diffFault);
-        let anonymityFaultsMedian = sumArray(anonymityFaultsStore) / anonymityFaultsStore.length;
-        statisticsArray.push(anonymityFaultsMedian);
+        statisticsArray.push((100*consecutiveCoinJoinsBeforeMedian) / transactionInputsMedian);
 
         outputsStore.push(transactionOutputsLength);
         let outputsStoreMedian = sumArray(outputsStore) / outputsStore.length;
         statisticsArray.push(outputsStoreMedian);
-
-        // outputValuesStore.push(outputValuesCount);
-        // let outputValuesMedian = sumArray(outputValuesStore) / outputValuesStore.length;
-        // statisticsArray.push(outputValuesMedian);
 
         denominationsStore.push(maxValue);
         let denominationsMedian = sumArray(denominationsStore) / denominationsStore.length;
@@ -245,11 +248,12 @@ async function analyseTransaction(data, moreDepth) {
         consecutiveCoinJoinsAfterStore.push(coinJoined ?? 0);
         let consecutiveCoinJoinsAfterMedian = sumArray(consecutiveCoinJoinsAfterStore) / consecutiveCoinJoinsAfterStore.length;
         statisticsArray.push(consecutiveCoinJoinsAfterMedian);
-
+        statisticsArray.push((100*consecutiveCoinJoinsAfterMedian) / anonymitySetMedian);
 
         mistakesStore.push(mistakes ?? 0);
         let mistakesMedian = sumArray(mistakesStore) / mistakesStore.length;
         statisticsArray.push(mistakesMedian);
+        statisticsArray.push(100* (mistakesMedian ?? 0) / anonymitySetMedian);
 
         unspentAfterStore.push(unspentCoins ?? 0);
         let unspentAfterMedian = sumArray(unspentAfterStore) / unspentAfterStore.length;
@@ -299,24 +303,11 @@ function delay(time) {
 }
 
 async function checkForConsecutiveCoinjoinsAfter(transaction, maxValue, anonymitySetCount) {
-    let spentCount = 0;
     let consecutiveCoinJoinsCount = 0;
     let unspent = 0;
 
     for (var i = 0; i < transaction.out.length; i++) {
-        // console.log("Next output" + i);
         if (satoshisToBTC(transaction.out[i].value) == maxValue) {
-            // const response = await fetch("/address", {
-            //     method: "POST",
-            //     headers: {
-            //         "Content-Type": "application/json"
-            //     },
-            //     body: JSON.stringify({
-            //         address: transaction.out[i].addr,
-            //     })
-            // });
-            // let data = await response?.json();
-            // console.log(data);
             let spendingOutpoint = transaction.out[i].spending_outpoints[0];
             if (spendingOutpoint) {
                 await fetch("/transaction", {
@@ -351,7 +342,6 @@ async function checkForConsecutiveCoinjoinsBefore(transaction) {
     for (var i = 0; i < transaction.inputs.length; i++) {
         let prev_out = transaction.inputs[i].prev_out;
         if (prev_out) {
-            // console.log("Next input" + i);
             await fetch("/transaction", {
                 method: "POST",
                 headers: {
@@ -367,8 +357,6 @@ async function checkForConsecutiveCoinjoinsBefore(transaction) {
                         consecutiveCoinJoinsCount++;
                     }
                 }).catch(error => { });
-            // let data = await response?.json();
-            // let consecutiveCoinJoin = await analyseTransaction(data, false);
         }
     }
     return consecutiveCoinJoinsCount;
@@ -376,8 +364,6 @@ async function checkForConsecutiveCoinjoinsBefore(transaction) {
 
 async function checkForAnonymityMistake(transaction, maxValue) {
     let mistakesCount = 0;
-    // let addr = input.prev_out.addr;
-
     let addresses = [];
     for (let input of transaction.inputs) {
         let addr = input.prev_out.addr;
@@ -437,7 +423,6 @@ async function checkForAnonymityMistake(transaction, maxValue) {
 
 
         }
-
     }
     return mistakesCount;
 }
