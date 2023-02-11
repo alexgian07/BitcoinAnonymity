@@ -4,7 +4,7 @@ const exportJsonBtn = document.getElementById("export-json-btn");
 const clearButton = document.getElementById("clearButton");
 const form = document.querySelector('form');
 const tabs = document.querySelectorAll(".tab-link");
-let intervalTime = 1000;
+let intervalTime = 10000;
 let intervalId;
 
 let transactionsTotalCount = 0;
@@ -17,6 +17,7 @@ let denominationsStore = [];
 let anonymitySetStore = [];
 let consecutiveCoinJoinsAfterStore = [];
 let unspentAfterStore = [];
+let mistakesStore = [];
 
 let consecutiveCoinJoinsBeforeStore = [];
 let unspentBeforeStore = [];
@@ -183,9 +184,9 @@ async function analyseTransaction(data, moreDepth) {
         let transactionOutputsLength = transaction?.out?.length ?? 0;
         let diffFault = 100 * (dif) / transaction?.inputs?.length;
         let isWasabiCoinJoin = (maxCount >= 10);
-        console.log("max count " + maxCount + " so it is "+ isWasabiCoinJoin);
+        console.log("max count " + maxCount + " so it is " + isWasabiCoinJoin);
         if (!moreDepth) {
-            return {maxCount: maxCount, maxValue:maxValue };
+            return { maxCount: maxCount, maxValue: maxValue };
         }
         let coinJoined, unspentCoins, coinJoinedBefore;
         if (isWasabiCoinJoin) {
@@ -197,7 +198,11 @@ async function analyseTransaction(data, moreDepth) {
             coinJoined = coinjoinResults?.consecutiveCoinJoinsCount;
             unspentCoins = coinjoinResults?.unspent;
         }
+        else{
 
+        }
+        
+        let mistakes = await checkForAnonymityMistake(transaction, maxValue);
         tr.innerHTML = `
           <td>${transaction.hash}</td>
           <td>${transactionInputsLength}</td>
@@ -209,6 +214,7 @@ async function analyseTransaction(data, moreDepth) {
           <td>${maxValue}</td>
           <td>${maxCount}</td>
           <td>${coinJoined}</td>
+          <td>${mistakes}</td>
           <td>${unspentCoins}</td>
           <td>${date.getHours() + ":" + date.getMinutes() + ", " + date.toDateString()}</td>
       `;
@@ -254,10 +260,15 @@ async function analyseTransaction(data, moreDepth) {
         let consecutiveCoinJoinsAfterMedian = sumArray(consecutiveCoinJoinsAfterStore) / consecutiveCoinJoinsAfterStore.length;
         statisticsArray.push(consecutiveCoinJoinsAfterMedian);
 
+
+        mistakesStore.push(mistakes ?? 0);
+        let mistakesMedian = sumArray(mistakesStore) / mistakesStore.length;
+        statisticsArray.push(mistakesMedian);
+
         unspentAfterStore.push(unspentCoins ?? 0);
         let unspentAfterMedian = sumArray(unspentAfterStore) / unspentAfterStore.length;
         statisticsArray.push(unspentAfterMedian);
-        
+
         setStatistics(statisticsArray);
         tbody.appendChild(tr);
         return false;
@@ -331,12 +342,12 @@ async function checkForConsecutiveCoinjoinsAfter(transaction, maxValue, anonymit
                         transactionHash: spendingOutpoint.tx_index,
                     })
                 }).then(response => response.json())
-                .then(async data => {
-                    let result = await analyseTransaction(data, false);
-                    if ((result?.maxCount ?? 0) >= 10){
-                        consecutiveCoinJoinsCount++;
-                    }
-                }).catch(error => {});
+                    .then(async data => {
+                        let result = await analyseTransaction(data, false);
+                        if ((result?.maxCount ?? 0) >= 10) {
+                            consecutiveCoinJoinsCount++;
+                        }
+                    }).catch(error => { });
             }
             else {
                 unspent++;
@@ -366,13 +377,83 @@ async function checkForConsecutiveCoinjoinsBefore(transaction) {
             }).then(response => response.json())
                 .then(async data => {
                     let result = await analyseTransaction(data, false);
-                    if ((result?.maxCount ?? 0 >= 10) && result.maxValue == satoshisToBTC(prev_out.value)){
+                    if ((result?.maxCount ?? 0 >= 10) && result.maxValue == satoshisToBTC(prev_out.value)) {
                         consecutiveCoinJoinsCount++;
                     }
-                }).catch(error => {});
+                }).catch(error => { });
             // let data = await response?.json();
             // let consecutiveCoinJoin = await analyseTransaction(data, false);
         }
     }
-    return  consecutiveCoinJoinsCount;
+    return consecutiveCoinJoinsCount;
+}
+
+
+
+async function checkForAnonymityMistake(transaction, maxValue) {
+    let mistakesCount = 0;
+    // let addr = input.prev_out.addr;
+
+    let addresses = [];
+    for (let input of transaction.inputs) {
+        let addr = input.prev_out.addr;
+        if (addresses.indexOf(addr) === -1) {
+            addresses.push(addr);
+        }
+    }
+    for (let output of transaction.out) {
+        let addrOut = output.addr;
+        if (addresses.indexOf(addrOut) === -1) {
+            addresses.push(addrOut);
+        }
+    }
+
+    for (let i = 0; i < transaction.out.length; i++) {
+        if (satoshisToBTC(transaction.out[i].value) == maxValue) {
+            let mistake = false;
+            let address = transaction.out[i].addr;
+            let spendingOutpoint = transaction.out[i].spending_outpoints[0];
+            if (spendingOutpoint) {
+                console.log("next output " + i);
+                await fetch("/transaction", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        transactionHash: spendingOutpoint.tx_index,
+                    })
+                }).then(response => response.json())
+                    .then(trans => {
+                        let nexTransaction = trans.transactionInfo;
+                        let nextAddresses = [];
+                        for (let j = 0; j < nexTransaction?.inputs?.length ?? 0; j++) {
+                            let nextAddrI = nexTransaction.inputs[j].prev_out.addr;
+                            if (nextAddresses.indexOf(nextAddrI) === -1) {
+                                nextAddresses.push(nextAddrI);
+                            }
+                        }
+                        // for (let k = 0; k <  nexTransaction?.out?.length ?? 0; k++) {
+                        //     let nextAddrO = nexTransaction?.out[k].addr
+                        //     if (nextAddresses.indexOf(nextAddrO) === -1) {
+                        //         nextAddresses.push(nextAddrO);
+                        //     }
+                        // }
+                        console.log("hereeeeeeeeeeeeeeeee");
+                        let common = addresses.filter(adr => adr != address && nextAddresses.includes(adr));
+                        console.log("There are common addresses:", common ?? 0);
+                        if (common?.length > 0) {
+                            mistake = true;
+                            mistakesCount++;
+                        }
+                    }).catch(error => { console.log(error); });
+            }
+            else {
+            }
+
+
+        }
+
+    }
+    return mistakesCount;
 }
