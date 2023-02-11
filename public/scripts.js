@@ -39,11 +39,6 @@ tabs.forEach(tab => {
 btn.addEventListener("click", async () => {
     try {
         intervalId = setInterval(async () => {
-            // console.log("Next transaction");
-            // const response = await fetch("/getTransactionInfo");
-            // const data = await response.json();
-            // analyseTransaction(data, true);
-
             fetch("/getTransactionInfo")
                 .then(response => response.json())
                 .then(data => analyseTransaction(data, true))
@@ -190,16 +185,10 @@ async function analyseTransaction(data, moreDepth) {
         }
         let coinJoined, unspentCoins, coinJoinedBefore;
         if (isWasabiCoinJoin) {
-            console.log("GOING FOR DETAILS");
-            // console.log("precessing history");
             coinJoinedBefore = await checkForConsecutiveCoinjoinsBefore(transaction);
             let coinjoinResults = await checkForConsecutiveCoinjoinsAfter(transaction, maxValue, maxCount);
-            // console.log("evaluating results");
             coinJoined = coinjoinResults?.consecutiveCoinJoinsCount;
             unspentCoins = coinjoinResults?.unspent;
-        }
-        else{
-
         }
         
         let mistakes = await checkForAnonymityMistake(transaction, maxValue);
@@ -210,7 +199,6 @@ async function analyseTransaction(data, moreDepth) {
           <td>${coinJoinedBefore}</td>
           <td  class="${(dif ?? 0) !== 0 ? 'red' : ''}">${100 * (dif) / transactionInputsLength}%</td>
           <td>${transaction?.out?.length}</td>
-          <td>${outputValuesCount}</td>
           <td>${maxValue}</td>
           <td>${maxCount}</td>
           <td>${coinJoined}</td>
@@ -218,9 +206,7 @@ async function analyseTransaction(data, moreDepth) {
           <td>${unspentCoins}</td>
           <td>${date.getHours() + ":" + date.getMinutes() + ", " + date.toDateString()}</td>
       `;
-        // if(transaction?.inputs?.length < 100){
-        //     return;
-        // }
+        
         let statisticsArray = [];
         statisticsArray.push(++transactionsTotalCount);
 
@@ -244,9 +230,9 @@ async function analyseTransaction(data, moreDepth) {
         let outputsStoreMedian = sumArray(outputsStore) / outputsStore.length;
         statisticsArray.push(outputsStoreMedian);
 
-        outputValuesStore.push(outputValuesCount);
-        let outputValuesMedian = sumArray(outputValuesStore) / outputValuesStore.length;
-        statisticsArray.push(outputValuesMedian);
+        // outputValuesStore.push(outputValuesCount);
+        // let outputValuesMedian = sumArray(outputValuesStore) / outputValuesStore.length;
+        // statisticsArray.push(outputValuesMedian);
 
         denominationsStore.push(maxValue);
         let denominationsMedian = sumArray(denominationsStore) / denominationsStore.length;
@@ -387,8 +373,6 @@ async function checkForConsecutiveCoinjoinsBefore(transaction) {
     }
     return consecutiveCoinJoinsCount;
 }
-
-
 
 async function checkForAnonymityMistake(transaction, maxValue) {
     let mistakesCount = 0;
